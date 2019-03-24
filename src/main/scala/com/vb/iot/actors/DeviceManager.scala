@@ -1,18 +1,18 @@
 package com.vb.iot.actors
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
-import com.vb.iot.actors.DeviceManager.RequestTrackDevice
+import com.vb.iot.actors.DeviceManager.TrackDeviceRequest
 
 object DeviceManager {
 	def props(): Props = Props(new DeviceManager)
 
-	final case class RequestTrackDevice(groupId: String, deviceId: String)
-	case object DeviceRegistered
+	final case class TrackDeviceRequest(groupId: String, deviceId: String)
+	case object DeviceRegisteredResponse
 }
 
 class DeviceManager extends Actor with ActorLogging {
 
-	var groupIdToActor = Map.empty[String, ActorRef]
+	var groupIdToItsActor = Map.empty[String, ActorRef]
 	var actorToGroupId = Map.empty[ActorRef, String]
 
 	override def preStart(): Unit = log.info("DeviceManager started")
@@ -20,16 +20,19 @@ class DeviceManager extends Actor with ActorLogging {
 	override def postStop(): Unit = log.info("DeviceManager stopped")
 
 	override def receive = {
-		case trackMsg @ RequestTrackDevice(groupId, _) ⇒
-			groupIdToActor.get(groupId) match {
+		case trackMsg @ TrackDeviceRequest(groupId, _) ⇒
+			groupIdToItsActor.get(groupId) match {
 				case Some(ref) ⇒
-					ref forward trackMsg
+					ref forward trackMsg // forward to the group actor
 				case None ⇒
 					log.info("Creating device group actor for {}", groupId)
 					val groupActor = context.actorOf(DeviceGroup.props(groupId), "group-" + groupId)
+
 					context.watch(groupActor)
+
 					groupActor forward trackMsg
-					groupIdToActor += groupId -> groupActor
+
+					groupIdToItsActor += groupId -> groupActor
 					actorToGroupId += groupActor -> groupId
 			}
 
@@ -37,7 +40,7 @@ class DeviceManager extends Actor with ActorLogging {
 			val groupId = actorToGroupId(groupActor)
 			log.info("Device group actor for {} has been terminated", groupId)
 			actorToGroupId -= groupActor
-			groupIdToActor -= groupId
+			groupIdToItsActor -= groupId
 
 	}
 

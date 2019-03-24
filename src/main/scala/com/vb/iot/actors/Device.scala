@@ -5,11 +5,13 @@ import akka.actor.{ Actor, ActorLogging, Props }
 object Device {
 	def props(groupId: String, deviceId: String): Props = Props(new Device(groupId, deviceId))
 
-	final case class RecordTemperature(requestId: Long, value: Double)
-	final case class TemperatureRecorded(requestId: Long)
+	// protocol for writing temperature
+	final case class RecordTemperatureRequest(requestId: Long, value: Double)
+	final case class TemperatureRecordedResponse(requestId: Long)
 
-	final case class ReadTemperature(requestId: Long)
-	final case class RespondTemperature(requestId: Long, value: Option[Double])
+	// protocol for reading temperature
+	final case class ReadTemperatureRequest(requestId: Long)
+	final case class TemperatureResponse(requestId: Long, value: Option[Double])
 }
 
 class Device(groupId: String, deviceId: String) extends Actor with ActorLogging {
@@ -22,22 +24,22 @@ class Device(groupId: String, deviceId: String) extends Actor with ActorLogging 
 	override def postStop(): Unit = log.info("Device actor {}-{} stopped", groupId, deviceId)
 
 	override def receive: Receive = {
-		case DeviceManager.RequestTrackDevice(`groupId`, `deviceId`) ⇒
-			sender() ! DeviceManager.DeviceRegistered
+		case DeviceManager.TrackDeviceRequest(`groupId`, `deviceId`) ⇒
+			sender() ! DeviceManager.DeviceRegisteredResponse
 
-		case DeviceManager.RequestTrackDevice(groupId, deviceId) ⇒
+		case DeviceManager.TrackDeviceRequest(groupId, deviceId) ⇒
 			log.warning(
 				"Ignoring TrackDevice request for {}-{}.This actor is responsible for {}-{}.",
 				groupId, deviceId, this.groupId, this.deviceId
 			)
 
-		case RecordTemperature(id, value) ⇒
+		case RecordTemperatureRequest(id, value) ⇒
 			log.info("Recorded temperature reading {} with {}", value, id)
 			lastTemperatureReading = Some(value)
-			sender() ! TemperatureRecorded(id)
+			sender() ! TemperatureRecordedResponse(id)
 
-		case ReadTemperature(id) ⇒
-			sender() ! RespondTemperature(id, lastTemperatureReading)
+		case ReadTemperatureRequest(id) ⇒
+			sender() ! TemperatureResponse(id, lastTemperatureReading)
 	}
 
 }
