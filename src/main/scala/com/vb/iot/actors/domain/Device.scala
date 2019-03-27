@@ -1,7 +1,8 @@
-package com.vb.iot.actors
+package com.vb.iot.actors.domain
 
-import akka.actor.{ Actor, ActorLogging, Props }
+import akka.actor.{Actor, ActorLogging, Props}
 
+// Represent domain object
 object Device {
 	def props(groupId: String, deviceId: String): Props = Props(new Device(groupId, deviceId))
 

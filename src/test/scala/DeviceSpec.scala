@@ -1,12 +1,10 @@
-import java.util.concurrent.TimeUnit
-
 import akka.actor.{ActorSystem, PoisonPill}
 import akka.testkit.{TestKit, TestProbe}
-import com.vb.iot.actors.{Device, DeviceGroup, DeviceManager}
+import com.vb.iot.actors.domain.{Device, DeviceGroup, DeviceManager}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
+
 import scala.concurrent.duration._
 
-import scala.concurrent.duration.FiniteDuration
 
 class DeviceSpec(_system: ActorSystem)
 		extends TestKit(_system)

@@ -1,8 +1,9 @@
-package com.vb.iot.actors
+package com.vb.iot.actors.domain
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
-import com.vb.iot.actors.DeviceManager.TrackDeviceRequest
+import com.vb.iot.actors.domain.DeviceManager.TrackDeviceRequest
 
+// Represent domain object
 object DeviceManager {
 	def props(): Props = Props(new DeviceManager)
 

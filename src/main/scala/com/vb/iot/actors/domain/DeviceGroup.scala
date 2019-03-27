@@ -1,14 +1,24 @@
-package com.vb.iot.actors
+package com.vb.iot.actors.domain
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
-import com.vb.iot.actors.DeviceGroup.{ReplyDeviceListResponse, DeviceListRequest}
-import com.vb.iot.actors.DeviceManager.TrackDeviceRequest
+import com.vb.iot.actors.domain.DeviceManager.TrackDeviceRequest
 
+// Represent domain object
 object DeviceGroup {
 	def props(groupId: String): Props = Props(new DeviceGroup(groupId))
 
 	final case class DeviceListRequest(requestId: Long)
 	final case class ReplyDeviceListResponse(requestId: Long, ids: Set[String])
+
+	final case class RequestAllTemperatures(requestId: Long)
+	final case class RespondAllTemperatures(requestId: Long, temperatures: Map[String, TemperatureReading])
+
+	sealed trait TemperatureReading
+	final case class Temperature(value: Double) extends TemperatureReading
+	case object TemperatureNotAvailable extends TemperatureReading
+	case object DeviceNotAvailable extends TemperatureReading
+	case object DeviceTimedOut extends TemperatureReading
+
 }
 
 class DeviceGroup(groupId: String) extends Actor with ActorLogging {
