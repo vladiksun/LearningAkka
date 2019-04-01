@@ -23,9 +23,9 @@ class DeviceSpec(_system: ActorSystem)
 		val probe = TestProbe()
 		val deviceActor = system.actorOf(Device.props("group", "device"))
 
-		deviceActor.tell(Device.ReadTemperatureRequest(requestId = 42), probe.ref)
+		deviceActor.tell(Device.ReadTemperature(requestId = 42), probe.ref)
 
-		val response = probe.expectMsgType[Device.TemperatureResponse]
+		val response = probe.expectMsgType[Device.RespondTemperature]
 
 		response.requestId should ===(42L)
 		response.value should ===(None)
@@ -36,19 +36,19 @@ class DeviceSpec(_system: ActorSystem)
 		val probe = TestProbe()
 		val deviceActor = system.actorOf(Device.props("group", "device"))
 
-		deviceActor.tell(Device.RecordTemperatureRequest(requestId = 1, 24.0), probe.ref)
-		probe.expectMsg(Device.TemperatureRecordedResponse(requestId = 1))
+		deviceActor.tell(Device.RecordTemperature(requestId = 1, 24.0), probe.ref)
+		probe.expectMsg(Device.TemperatureRecorded(requestId = 1))
 
-		deviceActor.tell(Device.ReadTemperatureRequest(requestId = 2), probe.ref)
-		val response1 = probe.expectMsgType[Device.TemperatureResponse]
+		deviceActor.tell(Device.ReadTemperature(requestId = 2), probe.ref)
+		val response1 = probe.expectMsgType[Device.RespondTemperature]
 		response1.requestId should ===(2L)
 		response1.value should ===(Some(24.0))
 
-		deviceActor.tell(Device.RecordTemperatureRequest(requestId = 3, 55.0), probe.ref)
-		probe.expectMsg(Device.TemperatureRecordedResponse(requestId = 3))
+		deviceActor.tell(Device.RecordTemperature(requestId = 3, 55.0), probe.ref)
+		probe.expectMsg(Device.TemperatureRecorded(requestId = 3))
 
-		deviceActor.tell(Device.ReadTemperatureRequest(requestId = 4), probe.ref)
-		val response2 = probe.expectMsgType[Device.TemperatureResponse]
+		deviceActor.tell(Device.ReadTemperature(requestId = 4), probe.ref)
+		val response2 = probe.expectMsgType[Device.RespondTemperature]
 		response2.requestId should ===(4L)
 		response2.value should ===(Some(55.0))
 	}
@@ -57,8 +57,8 @@ class DeviceSpec(_system: ActorSystem)
 		val probe = TestProbe()
 		val deviceActor = system.actorOf(Device.props("group", "device"))
 
-		deviceActor.tell(DeviceManager.TrackDeviceRequest("group", "device"), probe.ref)
-		probe.expectMsg(DeviceManager.DeviceRegisteredResponse)
+		deviceActor.tell(DeviceManager.RequestTrackDevice("group", "device"), probe.ref)
+		probe.expectMsg(DeviceManager.DeviceRegistered)
 		probe.lastSender should ===(deviceActor)
 	}
 
@@ -66,10 +66,10 @@ class DeviceSpec(_system: ActorSystem)
 		val probe = TestProbe()
 		val deviceActor = system.actorOf(Device.props("group", "device"))
 
-		deviceActor.tell(DeviceManager.TrackDeviceRequest("wrongGroup", "device"), probe.ref)
+		deviceActor.tell(DeviceManager.RequestTrackDevice("wrongGroup", "device"), probe.ref)
 		probe.expectNoMessage(500.milliseconds)
 
-		deviceActor.tell(DeviceManager.TrackDeviceRequest("group", "Wrongdevice"), probe.ref)
+		deviceActor.tell(DeviceManager.RequestTrackDevice("group", "Wrongdevice"), probe.ref)
 		probe.expectNoMessage(500.milliseconds)
 	}
 
@@ -77,27 +77,27 @@ class DeviceSpec(_system: ActorSystem)
 		val probe = TestProbe()
 		val groupActor = system.actorOf(DeviceGroup.props("group"))
 
-		groupActor.tell(DeviceManager.TrackDeviceRequest("group", "device1"), probe.ref)
-		probe.expectMsg(DeviceManager.DeviceRegisteredResponse)
+		groupActor.tell(DeviceManager.RequestTrackDevice("group", "device1"), probe.ref)
+		probe.expectMsg(DeviceManager.DeviceRegistered)
 		val deviceActor1 = probe.lastSender
 
-		groupActor.tell(DeviceManager.TrackDeviceRequest("group", "device2"), probe.ref)
-		probe.expectMsg(DeviceManager.DeviceRegisteredResponse)
+		groupActor.tell(DeviceManager.RequestTrackDevice("group", "device2"), probe.ref)
+		probe.expectMsg(DeviceManager.DeviceRegistered)
 		val deviceActor2 = probe.lastSender
 		deviceActor1 should !==(deviceActor2)
 
 		// Check that the device actors are working
-		deviceActor1.tell(Device.RecordTemperatureRequest(requestId = 0, 1.0), probe.ref)
-		probe.expectMsg(Device.TemperatureRecordedResponse(requestId = 0))
-		deviceActor2.tell(Device.RecordTemperatureRequest(requestId = 1, 2.0), probe.ref)
-		probe.expectMsg(Device.TemperatureRecordedResponse(requestId = 1))
+		deviceActor1.tell(Device.RecordTemperature(requestId = 0, 1.0), probe.ref)
+		probe.expectMsg(Device.TemperatureRecorded(requestId = 0))
+		deviceActor2.tell(Device.RecordTemperature(requestId = 1, 2.0), probe.ref)
+		probe.expectMsg(Device.TemperatureRecorded(requestId = 1))
 	}
 
 	"ignore requests for wrong groupId" in {
 		val probe = TestProbe()
 		val groupActor = system.actorOf(DeviceGroup.props("group"))
 
-		groupActor.tell(DeviceManager.TrackDeviceRequest("wrongGroup", "device1"), probe.ref)
+		groupActor.tell(DeviceManager.RequestTrackDevice("wrongGroup", "device1"), probe.ref)
 		probe.expectNoMessage(500.milliseconds)
 	}
 
@@ -105,12 +105,12 @@ class DeviceSpec(_system: ActorSystem)
 		val probe = TestProbe()
 		val groupActor = system.actorOf(DeviceGroup.props("group"))
 
-		groupActor.tell(DeviceManager.TrackDeviceRequest("group", "device1"), probe.ref)
-		probe.expectMsg(DeviceManager.DeviceRegisteredResponse)
+		groupActor.tell(DeviceManager.RequestTrackDevice("group", "device1"), probe.ref)
+		probe.expectMsg(DeviceManager.DeviceRegistered)
 		val deviceActor1 = probe.lastSender
 
-		groupActor.tell(DeviceManager.TrackDeviceRequest("group", "device1"), probe.ref)
-		probe.expectMsg(DeviceManager.DeviceRegisteredResponse)
+		groupActor.tell(DeviceManager.RequestTrackDevice("group", "device1"), probe.ref)
+		probe.expectMsg(DeviceManager.DeviceRegistered)
 		val deviceActor2 = probe.lastSender
 
 		deviceActor1 should ===(deviceActor2)
@@ -120,11 +120,11 @@ class DeviceSpec(_system: ActorSystem)
 		val probe = TestProbe()
 		val groupActor = system.actorOf(DeviceGroup.props("group"))
 
-		groupActor.tell(DeviceManager.TrackDeviceRequest("group", "device1"), probe.ref)
-		probe.expectMsg(DeviceManager.DeviceRegisteredResponse)
+		groupActor.tell(DeviceManager.RequestTrackDevice("group", "device1"), probe.ref)
+		probe.expectMsg(DeviceManager.DeviceRegistered)
 
-		groupActor.tell(DeviceManager.TrackDeviceRequest("group", "device2"), probe.ref)
-		probe.expectMsg(DeviceManager.DeviceRegisteredResponse)
+		groupActor.tell(DeviceManager.RequestTrackDevice("group", "device2"), probe.ref)
+		probe.expectMsg(DeviceManager.DeviceRegistered)
 
 		groupActor.tell(DeviceGroup.DeviceListRequest(requestId = 0), probe.ref)
 		probe.expectMsg(DeviceGroup.ReplyDeviceListResponse(requestId = 0, Set("device1", "device2")))
@@ -134,12 +134,12 @@ class DeviceSpec(_system: ActorSystem)
 		val probe = TestProbe()
 		val groupActor = system.actorOf(DeviceGroup.props("group"))
 
-		groupActor.tell(DeviceManager.TrackDeviceRequest("group", "device1"), probe.ref)
-		probe.expectMsg(DeviceManager.DeviceRegisteredResponse)
+		groupActor.tell(DeviceManager.RequestTrackDevice("group", "device1"), probe.ref)
+		probe.expectMsg(DeviceManager.DeviceRegistered)
 		val toShutDown = probe.lastSender // this is a device actor
 
-		groupActor.tell(DeviceManager.TrackDeviceRequest("group", "device2"), probe.ref)
-		probe.expectMsg(DeviceManager.DeviceRegisteredResponse)
+		groupActor.tell(DeviceManager.RequestTrackDevice("group", "device2"), probe.ref)
+		probe.expectMsg(DeviceManager.DeviceRegistered)
 
 		groupActor.tell(DeviceGroup.DeviceListRequest(requestId = 0), probe.ref)
 		probe.expectMsg(DeviceGroup.ReplyDeviceListResponse(requestId = 0, Set("device1", "device2")))

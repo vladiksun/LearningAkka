@@ -1,14 +1,14 @@
 package com.vb.iot.actors.domain
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
-import com.vb.iot.actors.domain.DeviceManager.TrackDeviceRequest
+import com.vb.iot.actors.domain.DeviceManager.RequestTrackDevice
 
 // Represent domain object
 object DeviceManager {
 	def props(): Props = Props(new DeviceManager)
 
-	final case class TrackDeviceRequest(groupId: String, deviceId: String)
-	case object DeviceRegisteredResponse
+	final case class RequestTrackDevice(groupId: String, deviceId: String)
+	case object DeviceRegistered
 }
 
 class DeviceManager extends Actor with ActorLogging {
@@ -21,7 +21,7 @@ class DeviceManager extends Actor with ActorLogging {
 	override def postStop(): Unit = log.info("DeviceManager stopped")
 
 	override def receive = {
-		case trackMsg @ TrackDeviceRequest(groupId, _) ⇒
+		case trackMsg @ RequestTrackDevice(groupId, _) ⇒
 			groupIdToItsActor.get(groupId) match {
 				case Some(ref) ⇒
 					ref forward trackMsg // forward to the group actor
