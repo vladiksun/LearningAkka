@@ -1,3 +1,5 @@
+package com.vb.iot
+
 import akka.actor.{ActorSystem, PoisonPill}
 import akka.testkit.{TestKit, TestProbe}
 import com.vb.iot.actors.domain.{Device, DeviceGroup, DeviceManager}
